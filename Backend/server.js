@@ -3,9 +3,13 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
+const app = express();
+const port = process.env.PORT || 5000;
+
+// Configuración CORS para producción
 const allowedOrigins = [
-  'https://rentabilidad-arg.netlify.app',
-  'http://localhost:3000'
+  'https://rentabilidad-arg.netlify.app', // Tu dominio Netlify
+  'http://localhost:3000' // Desarrollo
 ];
 
 const corsOptions = {
@@ -21,11 +25,7 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-const app = express();
-const port = process.env.PORT || 5000;
-
-// Middlewares
-app.use(cors(corsOptions));  // Usa las opciones configuradas
+app.use(cors(corsOptions));  // ¡Reemplaza app.use(cors())!
 app.use(express.json());
 
 // Conexión a MongoDB
@@ -36,7 +36,16 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ Conectado a MongoDB'))
 .catch(err => console.error('❌ Error de conexión a MongoDB:', err));
 
-// Rutas
+// Ruta de verificación
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'active',
+    message: 'Backend funcionando',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Rutas principales
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
@@ -46,23 +55,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-app.get('/wake-up', (req, res) => {
-  res.send('¡Backend activado!');
-});
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', version: '1.0.0' });
-});
-
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'active', 
-    message: 'Backend funcionando correctamente',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Iniciar servidor
 app.listen(port, () => {
-  console.log(`🚀 Servidor backend corriendo en http://localhost:${port}`);
+  console.log(`🚀 Servidor backend en http://localhost:${port}`);
 });
