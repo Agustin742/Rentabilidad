@@ -1,0 +1,8 @@
+[build]
+  command = "echo 'Building static site'"
+  publish = "Frontend"  # ¡Esto es crucial!
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

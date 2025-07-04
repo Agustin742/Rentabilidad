@@ -1,8 +1,0 @@
-[build]
-  command = "echo 'No se necesita build para HTML estático'"
-  publish = "."  # Punto = publicar todo el directorio raíz
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
