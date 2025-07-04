@@ -73,6 +73,12 @@
       <p>Herramienta interna para análisis de rentabilidad | v 1.0</p>
     </footer>
   </div>
-  <script src="script.js"></script>
+  <script>
+    // Configuración dinámica para entornos
+    window.BACKEND_URL = window.location.hostname === 'localhost' 
+      ? 'http://localhost:5000/api'
+      : 'https://tu-backend-en-render.onrender.com/api';
+  </script>
+  <script src="script.js" defer></script>
   </body>
 </html>

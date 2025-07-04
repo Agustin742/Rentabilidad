@@ -5,14 +5,13 @@ const mongoose = require('mongoose');
 
 const corsOptions = {
   origin: [
-    'https://rentabilidad-arg.netlify.app/', // Reemplaza con tu dominio real
-    'http://localhost:3000' // Para desarrollo local
+    'https://rentabilidad-arg.netlify.app/', // Reemplaza con tu URL real
+    'http://localhost:3000' // Para desarrollo
   ],
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  methods: 'GET,POST,PUT,DELETE',
   credentials: true,
   optionsSuccessStatus: 204
 };
-
 
 
 const app = express();
@@ -43,6 +42,11 @@ app.use((err, req, res, next) => {
 app.get('/wake-up', (req, res) => {
   res.send('¡Backend activado!');
 });
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', version: '1.0.0' });
+});
+
 
 // Iniciar servidor
 app.listen(port, () => {
