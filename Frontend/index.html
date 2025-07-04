@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Rentabilidad</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  </head>
+
+  <body>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-calculator"></i> Calculadora de Rentabilidad</h1>
+      <p>Determina si tus productos son rentables considerando todos los costos</p>
+    </header>
+
+    <main>
+      <section class="form-section">
+        <form id="formulario">
+          <div class="form-group">
+            <label for="nombreProducto">
+              <i class="fas fa-box"></i> Nombre del Producto *
+            </label>
+            <input type="text" id="nombreProducto" placeholder="Ej: Auriculares Bluetooth" required minlength="3">
+          </div>
+
+          <div class="form-group">
+            <label for="cantidad">
+              <i class="fas fa-cubes"></i> Cantidad de Unidades *
+            </label>
+            <input type="number" id="cantidad" min="1" placeholder="Ej: 100" required>
+          </div>
+
+          <div class="form-group">
+            <label for="modoCosto">
+              <i class="fas fa-money-bill-wave"></i> Tipo de Costo *
+            </label>
+            <select id="modoCosto" required>
+              <option value="unidad">Costo por Unidad</option>
+              <option value="lote">Costo por Lote</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label id="labelCosto" for="costo">
+              <i class="fas fa-tag"></i> Costo por Unidad *
+            </label>
+            <input type="number" id="costo" min="0.01" step="0.01" placeholder="Ej: 1000" required>
+          </div>
+          
+          <!-- Nuevo campo para gastos de envío -->
+          <div class="form-group">
+            <label for="gastosEnvio">
+              <i class="fas fa-truck"></i> Gastos de Envío (opcional)
+            </label>
+            <input type="number" id="gastosEnvio" min="0" step="0.01" placeholder="Ej: 100">
+          </div>
+          
+          <!-- Botón dentro del formulario -->
+          <button type="submit" class="btn-calculate">
+            <i class="fas fa-calculator"></i> Calcular Rentabilidad
+          </button>
+        </form>
+      </section>
+
+      <section class="result-section" id="resultado">
+        <!-- Los resultados aparecerán aquí -->
+      </section>
+    </main>
+
+    <footer>
+      <p>Herramienta interna para análisis de rentabilidad | v 1.0</p>
+    </footer>
+  </div>
+  <script src="script.js"></script>
+  </body>
+</html>
