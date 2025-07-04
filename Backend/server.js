@@ -3,16 +3,23 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
+const allowedOrigins = [
+  'https://rentabilidad-arg.netlify.app',
+  'http://localhost:3000'
+];
+
 const corsOptions = {
-  origin: [
-    'https://rentabilidad-arg.netlify.app/', // Reemplaza con tu URL real
-    'http://localhost:3000' // Para desarrollo
-  ],
-  methods: 'GET,POST,PUT,DELETE',
+  origin: function (origin, callback) {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Bloqueado por CORS'));
+    }
+  },
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204
 };
-
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -47,6 +54,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', version: '1.0.0' });
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'active', 
+    message: 'Backend funcionando correctamente',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Iniciar servidor
 app.listen(port, () => {
