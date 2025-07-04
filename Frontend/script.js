@@ -1,10 +1,14 @@
+// Mantener activo el backend
+fetch(`${BACKEND_URL}/wake-up`)
+  .catch(() => console.log("Activando backend..."));
+
 const formulario = document.getElementById('formulario');
 const selectorCosto = document.getElementById('modoCosto');
 const labelCosto = document.getElementById('labelCosto');
 const resultadoDiv = document.getElementById('resultado');
 
 // URL del backend (ajustar según necesidad)
-const BACKEND_URL = 'http://localhost:5000/api';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 // Constantes para los porcentajes (deben coincidir con el backend)
 const PORCENTAJE_IMPUESTOS = 0.21;

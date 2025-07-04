@@ -3,11 +3,23 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
+const corsOptions = {
+  origin: [
+    'https://[TU-FRONTEND-EN-NETLIFY].netlify.app', // Reemplaza con tu dominio real
+    'http://localhost:3000' // Para desarrollo local
+  ],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
+
+
 const app = express();
 const port = process.env.PORT || 5000;
 
 // Middlewares
-app.use(cors());
+app.use(cors(corsOptions));  // Usa las opciones configuradas
 app.use(express.json());
 
 // Conexión a MongoDB
@@ -26,6 +38,10 @@ app.use('/api', apiRouter);
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Error interno del servidor' });
+});
+
+app.get('/wake-up', (req, res) => {
+  res.send('¡Backend activado!');
 });
 
 // Iniciar servidor
