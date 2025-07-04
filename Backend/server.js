@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 
 const corsOptions = {
   origin: [
-    'https://[TU-FRONTEND-EN-NETLIFY].netlify.app', // Reemplaza con tu dominio real
+    'https://rentabilidad-arg.netlify.app/', // Reemplaza con tu dominio real
     'http://localhost:3000' // Para desarrollo local
   ],
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
