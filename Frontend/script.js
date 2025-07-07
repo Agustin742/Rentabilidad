@@ -1,17 +1,23 @@
+// ================= CONFIGURACIÓN INICIAL =================
+// Determinar si estamos en local
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+// Definir la URL del backend
+const BACKEND_URL = isLocal 
+  ? 'http://localhost:5000/api' 
+  : 'https://rentabilidad.onrender.com/api';
+
 // Mantener activo el backend
 fetch(`${BACKEND_URL}/wake-up`)
+  .then(response => response.json())
+  .then(data => console.log("Backend activo:", data))
   .catch(() => console.log("Activando backend..."));
 
+// ================= ELEMENTOS DEL FORMULARIO =================
 const formulario = document.getElementById('formulario');
 const selectorCosto = document.getElementById('modoCosto');
 const labelCosto = document.getElementById('labelCosto');
 const resultadoDiv = document.getElementById('resultado');
-
-// URL del backend (ajustar según necesidad)
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const BACKEND_URL = isLocal 
-  ? 'http://localhost:5000/api' 
-  : 'https://rentabilidad.onrender.com/api';
 
 // Constantes para los porcentajes (deben coincidir con el backend)
 const PORCENTAJE_IMPUESTOS = 0.21;
@@ -20,13 +26,15 @@ const PORCENTAJE_MARKETING = 0.10;
 const MARGEN_GANANCIA = 0.05;
 const GASTOS_ENVIO_DEFAULT = 0;
 
+// ================= INICIALIZACIÓN =================
 // Inicializar el label al cargar
 actualizarLabelCosto();
 
-// EVENTOS
+// ================= EVENTOS =================
 selectorCosto.addEventListener('change', actualizarLabelCosto);
 formulario.addEventListener('submit', manejarSubmit);
 
+// ================= FUNCIONES =================
 function actualizarLabelCosto() {
   labelCosto.textContent = selectorCosto.value === 'unidad' 
     ? 'Costo por Unidad *' 
