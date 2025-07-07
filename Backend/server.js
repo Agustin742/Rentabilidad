@@ -8,15 +8,18 @@ const port = process.env.PORT || 5000;
 
 // Configuración CORS para producción
 const allowedOrigins = [
-  'https://rentabilidad.onrender.com', // Tu dominio Netlify
+  'https://rentabilidad-arg.netlify.app', // FRONTEND en Netlify
   'http://localhost:3000' // Desarrollo
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+    console.log("Origen solicitante:", origin); // Log para diagnóstico
+    
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log("Origen bloqueado:", origin);
       callback(new Error('Bloqueado por CORS'));
     }
   },
@@ -25,7 +28,8 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-app.use(cors(corsOptions));  // ¡Reemplaza app.use(cors())!
+
+app.use(cors(corsOptions));  // 
 app.use(express.json());
 
 // Conexión a MongoDB

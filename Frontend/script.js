@@ -8,7 +8,7 @@ const labelCosto = document.getElementById('labelCosto');
 const resultadoDiv = document.getElementById('resultado');
 
 // URL del backend (ajustar según necesidad)
-const BACKEND_URL = window.BACKEND_URL || 'http://localhost:5000/api';
+const BACKEND_URL = "https://rentabilidad.onrender.com" || 'http://localhost:5000/api';
 
 
 // Constantes para los porcentajes (deben coincidir con el backend)
