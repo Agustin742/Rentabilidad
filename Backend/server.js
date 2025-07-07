@@ -59,6 +59,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
+app.get('/api/wake-up', (req, res) => {
+  res.json({ status: 'awake', timestamp: new Date().toISOString() });
+});
+
 app.listen(port, () => {
   console.log(`🚀 Servidor backend en http://localhost:${port}`);
 });
