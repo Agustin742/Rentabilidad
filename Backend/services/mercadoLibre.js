@@ -33,7 +33,7 @@ async function searchProducts(query) {
       }
     });
     
-    // Filtrar productos relevantes
+    // Filtrar productos relevantes (nuevos)
     const relevantProducts = response.data.results.filter(
       product => product.condition === 'new'
     );
