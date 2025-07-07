@@ -1,25 +1,23 @@
 const axios = require('axios');
 
-// Configuración de la API
 const API_BASE_URL = 'https://api.mercadolibre.com';
 
-// Obtener token de acceso desde variables de entorno
+// Función mejorada para obtener el token
 function getAccessToken() {
-  const token = process.env.ML_ACCESS_TOKEN;
-  if (!token) {
-    throw new Error('Token de acceso a Mercado Libre no configurado');
+  // Verifica si existe la variable
+  if (!process.env.ML_ACCESS_TOKEN) {
+    console.error("ERROR CRÍTICO: ML_ACCESS_TOKEN no está definido en las variables de entorno");
+    throw new Error('Token de acceso no configurado');
   }
-  return token;
+  return process.env.ML_ACCESS_TOKEN;
 }
 
-// Buscar productos en Mercado Libre
 async function searchProducts(query) {
   try {
     const token = getAccessToken();
+    console.log("Token usado:", token.slice(0, 10) + "..."); // Log parcial del token
     
-    // Agregar retardo para evitar rate limits
-    const delay = parseInt(process.env.ML_API_DELAY || 1500);
-    await new Promise(resolve => setTimeout(resolve, delay));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     const response = await axios.get(`${API_BASE_URL}/sites/MLA/search`, {
       params: {
@@ -29,9 +27,10 @@ async function searchProducts(query) {
       },
       headers: {
         Authorization: `Bearer ${token}`,
-        'User-Agent': 'RentabilidadApp/1.0 (agustintabarcache74@gmail.com)'
+        'User-Agent': 'RentabilidadApp/1.0'
       }
     });
+
     
     // Filtrar productos relevantes (nuevos)
     const relevantProducts = response.data.results.filter(
