@@ -8,7 +8,7 @@ const port = process.env.PORT || 5000;
 
 // Configuración CORS para producción
 const allowedOrigins = [
-  'https://rentabilidad-arg.netlify.app', // Tu dominio Netlify
+  'https://rentabilidad.onrender.com', // Tu dominio Netlify
   'http://localhost:3000' // Desarrollo
 ];
 
