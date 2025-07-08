@@ -26,9 +26,9 @@ async function searchProducts(query) {
         sort: 'price_asc'
       },
       headers: {
-        Authorization: `Bearer ${token}`,
-        'User-Agent': 'RentabilidadApp/1.0'
-      }
+      Authorization: `Bearer ${token}`,
+      'User-Agent': 'RentabilidadApp/1.0 (agustintabarcache74@gmail.com)' // Usa TU email real
+    }
     });
 
     
