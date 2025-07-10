@@ -1,34 +1,16 @@
 const axios = require('axios');
 const qs = require('querystring');
-const crypto = require('crypto');
+const crypto = require('crypto'); // Añadir este módulo
 
 const API_BASE_URL = 'https://api.mercadolibre.com';
 let accessToken = null;
-
-// Función para generar PKCE code_verifier y challenge
-function generatePKCE() {
-  const codeVerifier = crypto.randomBytes(64).toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '')
-    .slice(0, 128);
-
-  const codeChallenge = crypto.createHash('sha256')
-    .update(codeVerifier)
-    .digest('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
-
-  return { codeVerifier, codeChallenge };
-}
 
 async function getAccessToken() {
   if (accessToken) return accessToken;
   
   // Verificar que tenemos el code_verifier
   if (!process.env.ML_CODE_VERIFIER) {
-    throw new Error('Falta el code_verifier de PKCE en las variables de entorno');
+    throw new Error('Falta el code_verifier en variables de entorno');
   }
 
   try {
@@ -40,7 +22,7 @@ async function getAccessToken() {
         client_secret: process.env.ML_SECRET_KEY,
         code: process.env.ML_AUTH_CODE,
         redirect_uri: process.env.ML_REDIRECT_URI,
-        code_verifier: process.env.ML_CODE_VERIFIER  // Añadido PKCE
+        code_verifier: process.env.ML_CODE_VERIFIER // Parámetro nuevo REQUERIDO
       }),
       {
         headers: {
@@ -54,11 +36,7 @@ async function getAccessToken() {
     return accessToken;
     
   } catch (error) {
-    console.error('Error obteniendo token:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      config: error.config
-    });
+    console.error('Error obteniendo token:', error.response?.data || error.message);
     throw new Error('Error de autenticación con Mercado Libre');
   }
 }
@@ -73,8 +51,7 @@ async function searchProducts(query) {
         limit: 5
       },
       headers: {
-        'Authorization': `Bearer ${token}`,
-        // Eliminados headers redundantes
+        'Authorization': `Bearer ${token}` // Solo este header es necesario
       }
     });
     
@@ -89,13 +66,11 @@ async function searchProducts(query) {
     return [];
   }
 }
+
 async function getPML(productName) {
   try {
     const products = await searchProducts(productName);
-    if (!products.length) return null;
-    
-    return Math.min(...products.map(p => p.price));
-    
+    return products.length ? Math.min(...products.map(p => p.price)) : null;
   } catch (error) {
     console.error('Error calculando PML:', error.message);
     return null;
