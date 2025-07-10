@@ -1,92 +1,89 @@
 const axios = require('axios');
+const qs = require('querystring');
 
 const API_BASE_URL = 'https://api.mercadolibre.com';
+let accessToken = null;
 
-// Función mejorada para obtener el token
-function getAccessToken() {
-  // Verifica si existe la variable
-  if (!process.env.ML_ACCESS_TOKEN) {
-    console.error("ERROR CRÍTICO: ML_ACCESS_TOKEN no está definido en las variables de entorno");
-    throw new Error('Token de acceso no configurado');
+async function getAccessToken() {
+  if (accessToken) return accessToken;
+  
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/oauth/token`,
+      qs.stringify({
+        grant_type: 'authorization_code',
+        client_id: process.env.ML_APP_ID,
+        client_secret: process.env.ML_SECRET_KEY,
+        code: process.env.ML_AUTH_CODE,
+        redirect_uri: process.env.ML_REDIRECT_URI
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    accessToken = response.data.access_token;
+    return accessToken;
+    
+  } catch (error) {
+    console.error('Error obteniendo token:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      config: error.config
+    });
+    throw new Error('Error de autenticación con Mercado Libre');
   }
-  return process.env.ML_ACCESS_TOKEN;
 }
 
 async function searchProducts(query) {
   try {
-    const token = getAccessToken();
-    console.log("Token usado:", token.slice(0, 10) + "..."); // Log parcial del token
+    const token = await getAccessToken();
+    console.log('Token obtenido correctamente');
     
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     const response = await axios.get(`${API_BASE_URL}/sites/MLA/search`, {
       params: {
         q: encodeURIComponent(query),
-        limit: 5,
-        sort: 'price_asc'
+        limit: 5
       },
       headers: {
-     Authorization: `Bearer ${token}`,
-      'User-Agent': 'RentabilidadApp/1.0 (agustintabarcache74@gmail.com)',
-      'x-app-id': '5811236879540843'  // AÑADE ESTA LÍNEA
-    }
+        'Authorization': `Bearer ${token}`,
+        'x-app-id': process.env.ML_APP_ID,
+        'x-app-secret': process.env.ML_SECRET_KEY
+      }
     });
-
     
-    // Filtrar productos relevantes (nuevos)
-    const relevantProducts = response.data.results.filter(
-      product => product.condition === 'new'
-    );
-    
-    // Procesar resultados
-    return relevantProducts.map(item => ({
-      id: item.id,
+    return response.data.results.map(item => ({
       title: item.title,
       price: item.price,
-      currency_id: item.currency_id,
-      condition: item.condition,
-      permalink: item.permalink,
-      thumbnail: item.thumbnail
+      condition: item.condition
     }));
     
   } catch (error) {
-    console.error('Error detallado en búsqueda de productos:', {
+    console.error('Error en búsqueda:', {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message
     });
-    
-    // Manejo específico de errores
-    if (error.response?.status === 401) {
-      throw new Error('Token de acceso inválido o expirado');
-    } else if (error.response?.status === 403) {
-      throw new Error('Acceso prohibido. Verifica tus credenciales');
-    } else if (error.response?.status === 429) {
-      throw new Error('Demasiadas solicitudes. Intenta de nuevo más tarde');
-    } else {
-      throw new Error('Error al buscar productos en Mercado Libre');
-    }
+    return [];
   }
 }
 
-// Obtener PML (Precio Mercado Libre)
 async function getPML(productName) {
   try {
     const products = await searchProducts(productName);
+    if (!products.length) return null;
     
-    if (products.length === 0) return null;
-    
-    // Calcular precio promedio (más confiable que el mínimo)
-    const total = products.reduce((sum, product) => sum + product.price, 0);
-    return total / products.length;
+    return Math.min(...products.map(p => p.price));
     
   } catch (error) {
-    console.error('Error en getPML:', error.message);
-    return null; // Devuelve null para que la app continúe sin PML
+    console.error('Error calculando PML:', error.message);
+    return null;
   }
 }
 
-module.exports = {
-  getPML,
-  searchProducts
-};
+module.exports = { getPML };

@@ -34,11 +34,11 @@ app.use(express.json());
 
 // Conexión a MongoDB
 mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000, // Aumenta timeout a 30s
-  socketTimeoutMS: 45000
+  serverSelectionTimeoutMS: 50000,
+  socketTimeoutMS: 60000
 })
+.then(() => console.log('✅ Conectado a MongoDB'))
+.catch(err => console.error('❌ Error de conexión a MongoDB:', err));
 
 // Ruta de verificación
 app.get('/api/health', (req, res) => {
