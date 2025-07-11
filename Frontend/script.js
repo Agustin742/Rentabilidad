@@ -197,6 +197,16 @@ async function manejarSubmit(event) {
         }
         
     } catch (error) {
+        const errMsg = (error.message || '').toLowerCase();
+        if (errMsg.includes('mercado libre') || errMsg.includes('access_token') || errMsg.includes('autenticar')) {
+            mostrarBotonConectarML();
+            return;
+        }
+        // Si fue un error de parsing (por ejemplo, backend no responde en JSON), también mostrar el botón
+        if (error instanceof SyntaxError || errMsg.includes('unexpected token')) {
+            mostrarBotonConectarML();
+            return;
+        }
         mostrarError(`Error: ${error.message}`);
     }
 }
