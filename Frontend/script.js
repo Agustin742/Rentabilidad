@@ -107,12 +107,16 @@ function mostrarBotonConectarML() {
   resultadoDiv.innerHTML = `
     <div class="error">
       <i class="fas fa-exclamation-circle"></i> Es necesario conectar con Mercado Libre para continuar.<br>
-      <button onclick="conectarMercadoLibre()" class="btn-calculate" style="margin-top:10px;">
+      <button id="btn-conectar-ml" class="btn-calculate" style="margin-top:10px;">
         <i class="fab fa-mercadolibre"></i> Conectar con Mercado Libre
       </button>
     </div>
   `;
+  // Asegurarse que el botón llama a la función correcta
+  const btn = document.getElementById('btn-conectar-ml');
+  if (btn) btn.onclick = conectarMercadoLibre;
 }
+
 
 // ================= ELEMENTOS DEL FORMULARIO =================
 const formulario = document.getElementById('formulario');
@@ -176,8 +180,14 @@ async function manejarSubmit(event) {
         
         // Verificar si la respuesta es exitosa
         if (!response.ok) {
-            const errorData = await response.json();
-            // Si el error es de autenticación de Mercado Libre, mostrar botón
+            let errorData = {};
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                // Si la respuesta no es JSON válido
+                mostrarBotonConectarML();
+                return;
+            }
             const errMsg = (errorData.error || '').toLowerCase();
             if (errMsg.includes('mercado libre') || errMsg.includes('access_token') || errMsg.includes('autenticar')) {
                 mostrarBotonConectarML();
