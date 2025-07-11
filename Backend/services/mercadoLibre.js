@@ -3,13 +3,9 @@ const axios = require('axios');
 const API_BASE_URL = 'https://api.mercadolibre.com';
 
 // Importar el objeto de tokens desde la ruta
+const mercadoLibreTokens = require('../mlTokenStore');
 function getMercadoLibreTokens() {
-  try {
-    return require('../routes/api').mercadoLibreTokens;
-  } catch {
-    // fallback para test local
-    return { access_token: null };
-  }
+  return mercadoLibreTokens;
 }
 
 async function getAccessToken() {
