@@ -105,6 +105,9 @@ router.post('/calculate', async (req, res) => {
     
   } catch (error) {
     console.error('Error en cálculo:', error);
+    if (error.message && error.message.toLowerCase().includes('access_token')) {
+      return res.status(401).json({ error: error.message });
+    }
     res.status(500).json({ error: error.message });
   }
 });
