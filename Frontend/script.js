@@ -107,7 +107,7 @@ function mostrarBotonConectarML() {
   resultadoDiv.innerHTML = `
     <div class="error">
       <i class="fas fa-exclamation-circle"></i> Es necesario conectar con Mercado Libre para continuar.<br>
-      <button id="btn-conectar-ml" class="btn-calculate" style="margin-top:10px;">
+      <button id="btn-conectar-ml" type="button" class="btn-calculate" style="margin-top:10px;">
         <i class="fab fa-mercadolibre"></i> Conectar con Mercado Libre
       </button>
     </div>
