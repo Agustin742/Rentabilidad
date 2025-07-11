@@ -1,17 +1,22 @@
 const axios = require('axios');
 const qs = require('querystring');
-const crypto = require('crypto'); // Añadir este módulo
 
 const API_BASE_URL = 'https://api.mercadolibre.com';
 let accessToken = null;
 
 async function getAccessToken() {
-  if (accessToken) return accessToken;
-  
-  // Verificar que tenemos el code_verifier
-  if (!process.env.ML_CODE_VERIFIER) {
-    throw new Error('Falta el code_verifier en variables de entorno');
+  if (accessToken) {
+    console.log('Usando token existente');
+    return accessToken;
   }
+  
+  console.log('Obteniendo nuevo token...', {
+    client_id: process.env.ML_APP_ID ? 'presente' : 'ausente',
+    client_secret: process.env.ML_SECRET_KEY ? 'presente' : 'ausente',
+    code: process.env.ML_AUTH_CODE ? 'presente' : 'ausente',
+    redirect_uri: process.env.ML_REDIRECT_URI,
+    code_verifier: process.env.ML_CODE_VERIFIER ? 'presente' : 'ausente'
+  });
 
   try {
     const response = await axios.post(
@@ -22,39 +27,55 @@ async function getAccessToken() {
         client_secret: process.env.ML_SECRET_KEY,
         code: process.env.ML_AUTH_CODE,
         redirect_uri: process.env.ML_REDIRECT_URI,
-        code_verifier: process.env.ML_CODE_VERIFIER // Parámetro nuevo REQUERIDO
+        code_verifier: process.env.ML_CODE_VERIFIER
       }),
       {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json'
-        }
+        },
+        timeout: 10000
       }
     );
     
     accessToken = response.data.access_token;
+    console.log('Token obtenido exitosamente');
     return accessToken;
     
   } catch (error) {
-    console.error('Error obteniendo token:', error.response?.data || error.message);
-    throw new Error('Error de autenticación con Mercado Libre');
+    console.error('Error obteniendo token:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        data: error.config?.data
+      }
+    });
+    throw new Error(`Error de autenticación: ${error.response?.data?.error || error.message}`);
   }
 }
 
 async function searchProducts(query) {
   try {
     const token = await getAccessToken();
+    const searchUrl = `${API_BASE_URL}/sites/MLA/search?q=${encodeURIComponent(query)}&limit=5`;
     
-    const response = await axios.get(`${API_BASE_URL}/sites/MLA/search`, {
-      params: {
-        q: encodeURIComponent(query),
-        limit: 5
-      },
+    console.log('Realizando búsqueda:', {
+      url: searchUrl,
       headers: {
-        'Authorization': `Bearer ${token}` // Solo este header es necesario
+        Authorization: `Bearer ${token.substring(0, 15)}...` // Solo mostrar parte del token
       }
     });
+
+    const response = await axios.get(searchUrl, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      timeout: 10000
+    });
     
+    console.log('Búsqueda exitosa. Resultados:', response.data.results.length);
     return response.data.results.map(item => ({
       title: item.title,
       price: item.price,
@@ -62,7 +83,20 @@ async function searchProducts(query) {
     }));
     
   } catch (error) {
-    console.error('Error en búsqueda:', error.response?.data || error.message);
+    console.error('Error en búsqueda:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: {
+          Authorization: error.config?.headers?.Authorization 
+            ? `${error.config.headers.Authorization.substring(0, 15)}...` 
+            : 'Ausente'
+        }
+      }
+    });
     return [];
   }
 }
