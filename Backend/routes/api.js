@@ -18,13 +18,18 @@ const ML_REDIRECT_URI = process.env.ML_REDIRECT_URI || 'https://rentabilidad-arg
 
 // Endpoint para obtener la URL de autenticación de Mercado Libre
 router.get('/mercadolibre/auth-url', (req, res) => {
-  const url = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${ML_APP_ID}&redirect_uri=${encodeURIComponent(ML_REDIRECT_URI)}`;
+  // Soportar PKCE (opcional)
+  const { code_challenge } = req.query;
+  let url = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${ML_APP_ID}&redirect_uri=${encodeURIComponent(ML_REDIRECT_URI)}`;
+  if (code_challenge) {
+    url += `&code_challenge=${code_challenge}&code_challenge_method=S256`;
+  }
   res.json({ url });
 });
 
 // Endpoint para recibir el code y obtener el access_token
 router.post('/mercadolibre/callback', async (req, res) => {
-  const { code } = req.body;
+  const { code, code_verifier } = req.body;
   if (!code) return res.status(400).json({ error: 'Falta el code' });
 
   try {
@@ -35,6 +40,10 @@ router.post('/mercadolibre/callback', async (req, res) => {
       code,
       redirect_uri: ML_REDIRECT_URI
     });
+    // Incluir code_verifier si viene del frontend (PKCE)
+    if (code_verifier) {
+      params.append('code_verifier', code_verifier);
+    }
 
     const response = await axios.post('https://api.mercadolibre.com/oauth/token', params.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }

@@ -20,10 +20,16 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (code) {
     mostrarSpinner();
     try {
+      // Recuperar el code_verifier
+      const code_verifier = sessionStorage.getItem('ml_code_verifier');
+      if (!code_verifier) {
+        mostrarError('No se encontró el code_verifier. Intenta conectar nuevamente.');
+        return;
+      }
       const resp = await fetch(`${BACKEND_URL}/mercadolibre/callback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code })
+        body: JSON.stringify({ code, code_verifier })
       });
       if (!resp.ok) {
         const err = await resp.json();
@@ -40,10 +46,52 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// ================= PKCE UTILS =================
+function generateRandomString(length) {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  let result = '';
+  const array = new Uint8Array(length);
+  window.crypto.getRandomValues(array);
+  for (let i = 0; i < array.length; i++) {
+    result += charset[array[i] % charset.length];
+  }
+  return result;
+}
+
+async function sha256(plain) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plain);
+  const hash = await window.crypto.subtle.digest('SHA-256', data);
+  return new Uint8Array(hash);
+}
+
+function base64UrlEncode(arrayBuffer) {
+  let str = '';
+  const bytes = new Uint8Array(arrayBuffer);
+  for (let i = 0; i < bytes.byteLength; i++) {
+    str += String.fromCharCode(bytes[i]);
+  }
+  return btoa(str)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+async function pkceChallengeFromVerifier(verifier) {
+  const hashed = await sha256(verifier);
+  return base64UrlEncode(hashed);
+}
+
 async function conectarMercadoLibre() {
   mostrarSpinner();
   try {
-    const resp = await fetch(`${BACKEND_URL}/mercadolibre/auth-url`);
+    // 1. Generar code_verifier y code_challenge
+    const code_verifier = generateRandomString(64);
+    sessionStorage.setItem('ml_code_verifier', code_verifier);
+    const code_challenge = await pkceChallengeFromVerifier(code_verifier);
+
+    // 2. Pedir la URL de autorización al backend (enviar el challenge)
+    const resp = await fetch(`${BACKEND_URL}/mercadolibre/auth-url?code_challenge=${code_challenge}`);
     const data = await resp.json();
     if (data.url) {
       window.location.href = data.url;
