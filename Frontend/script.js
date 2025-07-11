@@ -38,8 +38,10 @@ window.addEventListener('DOMContentLoaded', async () => {
         mostrarError('Error autenticando con Mercado Libre: ' + (err.error || ''));
       } else {
         mostrarError('¡Conexión con Mercado Libre exitosa!');
+        // Limpiar el parámetro code de la URL sin recargar
+        window.history.replaceState({}, document.title, window.location.pathname);
         setTimeout(() => {
-          window.location.href = window.location.pathname;
+          window.location.reload();
         }, 1500);
       }
     } catch (e) {
