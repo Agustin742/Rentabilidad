@@ -3,7 +3,7 @@ const qs = require('querystring');
 
 const API_BASE_URL = 'https://api.mercadolibre.com';
 let accessToken = null;
-let refreshToken = null; // Variable para almacenar el refresh token
+let refreshToken = null;
 
 async function getAccessToken() {
   if (accessToken) {
@@ -11,7 +11,7 @@ async function getAccessToken() {
     return accessToken;
   }
   
-  // Primero intentamos renovar con refresh token si está disponible
+  // Intento de renovación con refresh token
   if (refreshToken) {
     console.log('Intentando renovar token con refresh token...');
     try {
@@ -33,8 +33,9 @@ async function getAccessToken() {
       );
       
       accessToken = response.data.access_token;
-      refreshToken = response.data.refresh_token; // Actualizamos el refresh token
+      refreshToken = response.data.refresh_token;
       console.log('Token renovado exitosamente con refresh token');
+      console.log('Scopes del token:', response.data.scope); // Log de scopes
       return accessToken;
       
     } catch (refreshError) {
@@ -43,19 +44,11 @@ async function getAccessToken() {
         error: refreshError.response?.data?.error,
         message: refreshError.response?.data?.message
       });
-      // Continuamos con el flujo normal si falla la renovación
     }
   }
 
   // Flujo normal con code_verifier
-  console.log('Obteniendo nuevo token con código de autorización...', {
-    client_id: process.env.ML_APP_ID ? 'presente' : 'ausente',
-    client_secret: process.env.ML_SECRET_KEY ? 'presente' : 'ausente',
-    code: process.env.ML_AUTH_CODE ? 'presente' : 'ausente',
-    redirect_uri: process.env.ML_REDIRECT_URI,
-    code_verifier: process.env.ML_CODE_VERIFIER ? 'presente' : 'ausente'
-  });
-
+  console.log('Obteniendo nuevo token con código de autorización...');
   try {
     const response = await axios.post(
       `${API_BASE_URL}/oauth/token`,
@@ -77,9 +70,10 @@ async function getAccessToken() {
     );
     
     accessToken = response.data.access_token;
-    refreshToken = response.data.refresh_token; // Guardamos el refresh token
+    refreshToken = response.data.refresh_token;
     
     console.log('Token obtenido exitosamente. Refresh token almacenado.');
+    console.log('Scopes del token:', response.data.scope); // Log de scopes
     return accessToken;
     
   } catch (error) {
@@ -99,16 +93,19 @@ async function getAccessToken() {
 async function searchProducts(query) {
   try {
     const token = await getAccessToken();
-    const searchUrl = `${API_BASE_URL}/sites/MLA/search?q=${encodeURIComponent(query)}&limit=5`;
+    const searchUrl = `${API_BASE_URL}/sites/MLA/search`;
     
     console.log('Realizando búsqueda:', {
       url: searchUrl,
-      headers: {
-        Authorization: `Bearer ${token.substring(0, 15)}...` // Solo mostrar parte del token
-      }
+      query: query,
+      limit: 5
     });
 
     const response = await axios.get(searchUrl, {
+      params: {
+        q: encodeURIComponent(query),
+        limit: 5
+      },
       headers: {
         'Authorization': `Bearer ${token}`
       },
@@ -125,23 +122,20 @@ async function searchProducts(query) {
   } catch (error) {
     console.error('Error en búsqueda:', {
       status: error.response?.status,
-      statusText: error.response?.statusText,
       data: error.response?.data,
-      config: {
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: {
-          Authorization: error.config?.headers?.Authorization 
-            ? `${error.config.headers.Authorization.substring(0, 15)}...` 
-            : 'Ausente'
-        }
-      }
+      url: error.config?.url,
+      method: error.config?.method
     });
 
-    // Si el error es 401 (Unauthorized) o 403 (Forbidden), forzar renovación del token
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       console.warn('Token inválido. Limpiando token para renovar...');
-      accessToken = null; // Forzar renovación en la próxima llamada
+      accessToken = null;
+      
+      // Intentar una vez más después de limpiar el token
+      if (error.response.status === 403) {
+        console.warn('Reintentando búsqueda con nuevo token...');
+        return searchProducts(query);
+      }
     }
 
     return [];
