@@ -1,4 +1,4 @@
-const { getPML } = require('./mercadoLibre');
+const { getPML } = require('./mercadoLibre').default;
 
 // Constantes
 const TAX_RATE = 0.21;        // 21% impuestos

@@ -1,5 +1,5 @@
-const { MercadoLibre } = require('mercadolibre');
-const axios = require('axios');
+import { MercadoLibre } from 'mercadolibre';
+import { get } from 'axios';
 
 // Configuración del cliente
 const client = new MercadoLibre({
@@ -15,7 +15,7 @@ async function searchProducts(query) {
     });
 
     // Usamos el token para buscar productos
-    const response = await axios.get('https://api.mercadolibre.com/sites/MLA/search', {
+    const response = await get('https://api.mercadolibre.com/sites/MLA/search', {
       params: {
         q: encodeURIComponent(query),
         limit: 5
@@ -46,7 +46,7 @@ async function searchProducts(query) {
 async function publicSearch(query) {
   try {
     console.log('Usando búsqueda pública como fallback');
-    const response = await axios.get('https://api.mercadolibre.com/sites/MLA/search', {
+    const response = await get('https://api.mercadolibre.com/sites/MLA/search', {
       params: {
         q: encodeURIComponent(query),
         limit: 5
@@ -75,4 +75,4 @@ async function getPML(productName) {
   }
 }
 
-module.exports = { getPML };
+export default { getPML };
