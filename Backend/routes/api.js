@@ -5,7 +5,7 @@ const Calculation = require('../models/Calculation');
 const axios = require('axios');
 
 // ====== Mercado Libre OAuth (admin) ======
-let mercadoLibreTokens = {
+const mercadoLibreTokens = {
   access_token: null,
   refresh_token: null,
   expires_in: null,
@@ -49,12 +49,10 @@ router.post('/mercadolibre/callback', async (req, res) => {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
-    mercadoLibreTokens = {
-      access_token: response.data.access_token,
-      refresh_token: response.data.refresh_token,
-      expires_in: response.data.expires_in,
-      obtained_at: Date.now()
-    };
+    mercadoLibreTokens.access_token = response.data.access_token;
+    mercadoLibreTokens.refresh_token = response.data.refresh_token;
+    mercadoLibreTokens.expires_in = response.data.expires_in;
+    mercadoLibreTokens.obtained_at = Date.now();
 
     res.json({ success: true, tokens: mercadoLibreTokens });
   } catch (error) {
