@@ -43,6 +43,7 @@ async function getAccessToken() {
 async function searchProducts(query) {
   // Usar el access_token OAuth guardado en memoria
   const token = getMercadoLibreTokens().access_token;
+  console.log('TOKEN ACTUAL:', token);
   if (!token) {
     throw new Error('No hay access_token de Mercado Libre. Debe autenticarse el administrador.');
   }
