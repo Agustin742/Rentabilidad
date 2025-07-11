@@ -49,6 +49,7 @@ router.post('/mercadolibre/callback', async (req, res) => {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
+    console.log('RESPUESTA DE ML OAUTH:', response.data);
     mercadoLibreTokens.access_token = response.data.access_token;
     mercadoLibreTokens.refresh_token = response.data.refresh_token;
     mercadoLibreTokens.expires_in = response.data.expires_in;
