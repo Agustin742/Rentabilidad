@@ -17,8 +17,10 @@ fetch(`${BACKEND_URL}/wake-up`)
 window.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get('code');
-  console.log('URL code:', code);
-  if (code) {
+
+  // Evita doble procesamiento usando un flag temporal
+  if (code && !sessionStorage.getItem('ml_oauth_processed')) {
+    sessionStorage.setItem('ml_oauth_processed', '1');
     mostrarSpinner();
     try {
       const code_verifier = sessionStorage.getItem('ml_code_verifier');
@@ -38,18 +40,18 @@ window.addEventListener('DOMContentLoaded', async () => {
         mostrarError('Error autenticando con Mercado Libre: ' + (err.error || ''));
       } else {
         mostrarError('¡Conexión con Mercado Libre exitosa!');
-        // Limpiar el parámetro code de la URL sin recargar
+        // Limpiar el parámetro code de la URL sin recargar ni reload
         window.history.replaceState({}, document.title, window.location.pathname);
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // El usuario puede seguir usando la app normalmente
       }
     } catch (e) {
       mostrarError('Error autenticando con Mercado Libre');
     }
   }
-
-
+  // Limpia el flag si ya no hay code en la URL
+  if (!code) {
+    sessionStorage.removeItem('ml_oauth_processed');
+  }
 });
 
 // ================= PKCE UTILS =================
