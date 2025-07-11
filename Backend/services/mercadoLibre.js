@@ -102,6 +102,10 @@ async function getPML(productName) {
     const products = await searchProducts(productName);
     return products.length ? Math.min(...products.map(p => p.price)) : null;
   } catch (error) {
+    // Si el error es por falta de access_token, relanzar para que el endpoint devuelva 401
+    if (error.message && error.message.toLowerCase().includes('access_token')) {
+      throw error;
+    }
     console.error('Error calculando PML:', error.message);
     return null;
   }
