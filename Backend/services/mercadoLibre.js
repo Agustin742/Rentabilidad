@@ -35,7 +35,7 @@ async function getAccessToken() {
       accessToken = response.data.access_token;
       refreshToken = response.data.refresh_token;
       console.log('Token renovado exitosamente con refresh token');
-      console.log('Scopes del token:', response.data.scope); // Log de scopes
+      console.log('Scopes del token:', response.data.scope);
       return accessToken;
       
     } catch (refreshError) {
@@ -44,6 +44,8 @@ async function getAccessToken() {
         error: refreshError.response?.data?.error,
         message: refreshError.response?.data?.message
       });
+      // Limpiar refresh token si falla
+      refreshToken = null;
     }
   }
 
@@ -73,7 +75,7 @@ async function getAccessToken() {
     refreshToken = response.data.refresh_token;
     
     console.log('Token obtenido exitosamente. Refresh token almacenado.');
-    console.log('Scopes del token:', response.data.scope); // Log de scopes
+    console.log('Scopes del token:', response.data.scope);
     return accessToken;
     
   } catch (error) {
@@ -127,15 +129,10 @@ async function searchProducts(query) {
       method: error.config?.method
     });
 
+    // Manejo de errores sin reintento automático
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      console.warn('Token inválido. Limpiando token para renovar...');
+      console.warn('Token inválido o falta de permisos. Limpiando token...');
       accessToken = null;
-      
-      // Intentar una vez más después de limpiar el token
-      if (error.response.status === 403) {
-        console.warn('Reintentando búsqueda con nuevo token...');
-        return searchProducts(query);
-      }
     }
 
     return [];
