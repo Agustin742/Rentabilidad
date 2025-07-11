@@ -3,6 +3,7 @@ const qs = require('querystring');
 
 const API_BASE_URL = 'https://api.mercadolibre.com';
 let accessToken = null;
+let refreshToken = null; // Variable para almacenar el refresh token
 
 async function getAccessToken() {
   if (accessToken) {
@@ -10,7 +11,44 @@ async function getAccessToken() {
     return accessToken;
   }
   
-  console.log('Obteniendo nuevo token...', {
+  // Primero intentamos renovar con refresh token si está disponible
+  if (refreshToken) {
+    console.log('Intentando renovar token con refresh token...');
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/oauth/token`,
+        qs.stringify({
+          grant_type: 'refresh_token',
+          client_id: process.env.ML_APP_ID,
+          client_secret: process.env.ML_SECRET_KEY,
+          refresh_token: refreshToken
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
+          },
+          timeout: 10000
+        }
+      );
+      
+      accessToken = response.data.access_token;
+      refreshToken = response.data.refresh_token; // Actualizamos el refresh token
+      console.log('Token renovado exitosamente con refresh token');
+      return accessToken;
+      
+    } catch (refreshError) {
+      console.warn('Error renovando token con refresh token:', {
+        status: refreshError.response?.status,
+        error: refreshError.response?.data?.error,
+        message: refreshError.response?.data?.message
+      });
+      // Continuamos con el flujo normal si falla la renovación
+    }
+  }
+
+  // Flujo normal con code_verifier
+  console.log('Obteniendo nuevo token con código de autorización...', {
     client_id: process.env.ML_APP_ID ? 'presente' : 'ausente',
     client_secret: process.env.ML_SECRET_KEY ? 'presente' : 'ausente',
     code: process.env.ML_AUTH_CODE ? 'presente' : 'ausente',
@@ -39,7 +77,9 @@ async function getAccessToken() {
     );
     
     accessToken = response.data.access_token;
-    console.log('Token obtenido exitosamente');
+    refreshToken = response.data.refresh_token; // Guardamos el refresh token
+    
+    console.log('Token obtenido exitosamente. Refresh token almacenado.');
     return accessToken;
     
   } catch (error) {
@@ -97,6 +137,13 @@ async function searchProducts(query) {
         }
       }
     });
+
+    // Si el error es 401 (Unauthorized) o 403 (Forbidden), forzar renovación del token
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      console.warn('Token inválido. Limpiando token para renovar...');
+      accessToken = null; // Forzar renovación en la próxima llamada
+    }
+
     return [];
   }
 }
