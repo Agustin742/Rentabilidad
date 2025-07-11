@@ -17,11 +17,12 @@ fetch(`${BACKEND_URL}/wake-up`)
 window.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get('code');
+  console.log('URL code:', code);
   if (code) {
     mostrarSpinner();
     try {
-      // Recuperar el code_verifier
       const code_verifier = sessionStorage.getItem('ml_code_verifier');
+      console.log('code_verifier:', code_verifier);
       if (!code_verifier) {
         mostrarError('No se encontró el code_verifier. Intenta conectar nuevamente.');
         return;
@@ -31,6 +32,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, code_verifier })
       });
+      console.log('Respuesta de /mercadolibre/callback:', resp.status);
       if (!resp.ok) {
         const err = await resp.json();
         mostrarError('Error autenticando con Mercado Libre: ' + (err.error || ''));
@@ -41,9 +43,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         }, 1500);
       }
     } catch (e) {
-      mostrarError('Error de red autenticando con Mercado Libre');
+      mostrarError('Error autenticando con Mercado Libre');
     }
   }
+
+
 });
 
 // ================= PKCE UTILS =================
