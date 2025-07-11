@@ -147,78 +147,79 @@ function actualizarLabelCosto() {
 }
 
 async function manejarSubmit(event) {
-    event.preventDefault();
-    resultadoDiv.innerHTML = '';
-    
-    const nombreProducto = document.getElementById('nombreProducto').value.trim();
-    const cantidad = parseFloat(document.getElementById('cantidad').value);
-    const modoCosto = selectorCosto.value;
-    const costo = parseFloat(document.getElementById('costo').value);
-    const gastosEnvio = parseFloat(document.getElementById('gastosEnvio').value) || GASTOS_ENVIO_DEFAULT;
-    
-    if (!validarEntradas(nombreProducto, cantidad, costo)) {
-        return;
-    }
-    
-    mostrarSpinner();
-    
-    try {
-        // Enviar solicitud al backend
-        const response = await fetch(`${BACKEND_URL}/calculate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                productName: nombreProducto,
-                cost: costo,
-                shippingCost: gastosEnvio,
-                quantity: cantidad,
-                costType: modoCosto
-            })
-        });
-        
-        // Verificar si la respuesta es exitosa
-        if (!response.ok) {
-            let errorData = {};
-            try {
-                errorData = await response.json();
-            } catch (e) {
-                // Si la respuesta no es JSON válido
-                mostrarBotonConectarML();
-                return;
-            }
-            const errMsg = (errorData.error || '').toLowerCase();
-            if (errMsg.includes('mercado libre') || errMsg.includes('access_token') || errMsg.includes('autenticar')) {
-                mostrarBotonConectarML();
-                return;
-            }
-            throw new Error(errorData.error || 'Error en el servidor');
-        }
-        
-        // Obtener los datos de la respuesta
-        const data = await response.json();
-        
-        // Mostrar resultados según la viabilidad
-        if (!data.viable) {
-            mostrarNoViable(data);
-        } else {
-            mostrarResultadosFinales(data);
-        }
-        
-    } catch (error) {
-        const errMsg = (error.message || '').toLowerCase();
-        if (errMsg.includes('mercado libre') || errMsg.includes('access_token') || errMsg.includes('autenticar')) {
-            mostrarBotonConectarML();
-            return;
-        }
-        // Si fue un error de parsing (por ejemplo, backend no responde en JSON), también mostrar el botón
-        if (error instanceof SyntaxError || errMsg.includes('unexpected token')) {
-            mostrarBotonConectarML();
-            return;
-        }
-        mostrarError(`Error: ${error.message}`);
-    }
+  event.preventDefault();
+  resultadoDiv.innerHTML = '';
+  
+  const nombreProducto = document.getElementById('nombreProducto').value.trim();
+  const cantidad = parseFloat(document.getElementById('cantidad').value);
+  const modoCosto = selectorCosto.value;
+  const costo = parseFloat(document.getElementById('costo').value);
+  const gastosEnvio = parseFloat(document.getElementById('gastosEnvio').value) || GASTOS_ENVIO_DEFAULT;
+  
+  if (!validarEntradas(nombreProducto, cantidad, costo)) {
+      return;
+  }
+  
+  mostrarSpinner();
+  
+  try {
+      // Enviar solicitud al backend
+      const response = await fetch(`${BACKEND_URL}/calculate`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+              productName: nombreProducto,
+              cost: costo,
+              shippingCost: gastosEnvio,
+              quantity: cantidad,
+              costType: modoCosto
+          })
+      });
+
+      // LOGS DE DEPURACIÓN AQUÍ
+      console.log('Status de la respuesta:', response.status);
+
+      if (!response.ok) {
+          let errorData = {};
+          try {
+              errorData = await response.json();
+          } catch (e) {
+              console.log('Respuesta no es JSON, mostrando botón de conexión');
+              mostrarBotonConectarML();
+              return;
+          }
+          const errMsg = (errorData.error || '').toLowerCase();
+          console.log('Error recibido del backend:', errMsg);
+          if (errMsg.includes('mercado libre') || errMsg.includes('access_token') || errMsg.includes('autenticar')) {
+              mostrarBotonConectarML();
+              return;
+          }
+          throw new Error(errorData.error || 'Error en el servidor');
+      }
+
+      const data = await response.json();
+
+      if (!data.viable) {
+          mostrarNoViable(data);
+      } else {
+          mostrarResultadosFinales(data);
+      }
+
+  } catch (error) {
+      console.log('Catch de manejarSubmit:', error);
+      const errMsg = (error.message || '').toLowerCase();
+      if (errMsg.includes('mercado libre') || errMsg.includes('access_token') || errMsg.includes('autenticar')) {
+          mostrarBotonConectarML();
+          return;
+      }
+      if (error instanceof SyntaxError || errMsg.includes('unexpected token')) {
+          mostrarBotonConectarML();
+          return;
+      }
+      mostrarError(`Error: ${error.message}`);
+  }
 }
 
 function validarEntradas(nombreProducto, cantidad, costo) {
