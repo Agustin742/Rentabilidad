@@ -3,15 +3,10 @@ const router = express.Router();
 const { calculatePrice } = require('../services/pricing');
 const Calculation = require('../models/Calculation');
 const axios = require('axios');
+const MLToken = require('../models/MLToken');
+const mercadoLibreTokens = require('../mlTokenStore');
 
 // ====== Mercado Libre OAuth (admin) ======
-const mercadoLibreTokens = {
-  access_token: null,
-  refresh_token: null,
-  expires_in: null,
-  obtained_at: null
-};
-
 const ML_APP_ID = process.env.ML_APP_ID;
 const ML_SECRET_KEY = process.env.ML_SECRET_KEY;
 const ML_REDIRECT_URI = process.env.ML_REDIRECT_URI || 'https://rentabilidad-arg.netlify.app/';
@@ -54,6 +49,20 @@ router.post('/mercadolibre/callback', async (req, res) => {
     mercadoLibreTokens.refresh_token = response.data.refresh_token;
     mercadoLibreTokens.expires_in = response.data.expires_in;
     mercadoLibreTokens.obtained_at = Date.now();
+
+    // Persistir en MongoDB
+    await MLToken.findOneAndUpdate(
+      {},
+      {
+        access_token: response.data.access_token,
+        refresh_token: response.data.refresh_token,
+        expires_in: response.data.expires_in,
+        obtained_at: Date.now(),
+        user_id: response.data.user_id,
+        scope: response.data.scope
+      },
+      { upsert: true, new: true }
+    );
 
     res.json({ success: true, tokens: mercadoLibreTokens });
   } catch (error) {

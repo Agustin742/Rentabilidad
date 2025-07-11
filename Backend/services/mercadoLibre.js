@@ -4,8 +4,22 @@ const API_BASE_URL = 'https://api.mercadolibre.com';
 
 // Importar el objeto de tokens desde la ruta
 const mercadoLibreTokens = require('../mlTokenStore');
-function getMercadoLibreTokens() {
-  return mercadoLibreTokens;
+const MLToken = require('../models/MLToken');
+async function getMercadoLibreTokens() {
+  // Si el token está en memoria, úsalo
+  if (mercadoLibreTokens.access_token) return mercadoLibreTokens;
+  // Si no, intenta cargarlo desde MongoDB
+  const dbToken = await MLToken.findOne({});
+  if (dbToken && dbToken.access_token) {
+    mercadoLibreTokens.access_token = dbToken.access_token;
+    mercadoLibreTokens.refresh_token = dbToken.refresh_token;
+    mercadoLibreTokens.expires_in = dbToken.expires_in;
+    mercadoLibreTokens.obtained_at = dbToken.obtained_at;
+    mercadoLibreTokens.user_id = dbToken.user_id;
+    mercadoLibreTokens.scope = dbToken.scope;
+    return mercadoLibreTokens;
+  }
+  return { access_token: null };
 }
 
 async function getAccessToken() {
