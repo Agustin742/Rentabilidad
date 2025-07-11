@@ -2,6 +2,16 @@ const axios = require('axios');
 
 const API_BASE_URL = 'https://api.mercadolibre.com';
 
+// Importar el objeto de tokens desde la ruta
+function getMercadoLibreTokens() {
+  try {
+    return require('../routes/api').mercadoLibreTokens;
+  } catch {
+    // fallback para test local
+    return { access_token: null };
+  }
+}
+
 async function getAccessToken() {
   try {
     const response = await axios.post(
@@ -31,38 +41,33 @@ async function getAccessToken() {
 }
 
 async function searchProducts(query) {
+  // Usar el access_token OAuth guardado en memoria
+  const token = getMercadoLibreTokens().access_token;
+  if (!token) {
+    throw new Error('No hay access_token de Mercado Libre. Debe autenticarse el administrador.');
+  }
   try {
-    // Primero intentamos con autenticación
-    const token = await getAccessToken();
-    
-    if (token) {
-      const response = await axios.get(`${API_BASE_URL}/sites/MLA/search`, {
-        params: {
-          q: encodeURIComponent(query),
-          limit: 5
-        },
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        timeout: 5000
-      });
-
-      return response.data.results.map(item => ({
-        title: item.title,
-        price: item.price,
-        condition: item.condition
-      }));
-    }
-    
-    // Si falla el token, intentamos sin autenticación
-    return publicSearch(query);
-    
+    const response = await axios.get(`${API_BASE_URL}/sites/MLA/search`, {
+      params: {
+        q: encodeURIComponent(query),
+        limit: 5
+      },
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      timeout: 5000
+    });
+    return response.data.results.map(item => ({
+      title: item.title,
+      price: item.price,
+      condition: item.condition
+    }));
   } catch (error) {
-    console.error('Error en búsqueda con token:', {
+    console.error('Error en búsqueda con token OAuth:', {
       status: error.response?.status,
       data: error.response?.data
     });
-    return publicSearch(query);
+    throw new Error('Error en búsqueda autenticada. Puede requerir reautenticación.');
   }
 }
 

@@ -13,6 +13,59 @@ fetch(`${BACKEND_URL}/wake-up`)
   .then(data => console.log("Backend activo:", data))
   .catch(() => console.log("Activando backend..."));
 
+// ================= OAUTH MERCADO LIBRE =================
+window.addEventListener('DOMContentLoaded', async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  if (code) {
+    mostrarSpinner();
+    try {
+      const resp = await fetch(`${BACKEND_URL}/mercadolibre/callback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+      if (!resp.ok) {
+        const err = await resp.json();
+        mostrarError('Error autenticando con Mercado Libre: ' + (err.error || ''));
+      } else {
+        mostrarError('¡Conexión con Mercado Libre exitosa!');
+        setTimeout(() => {
+          window.location.href = window.location.pathname;
+        }, 1500);
+      }
+    } catch (e) {
+      mostrarError('Error de red autenticando con Mercado Libre');
+    }
+  }
+});
+
+async function conectarMercadoLibre() {
+  mostrarSpinner();
+  try {
+    const resp = await fetch(`${BACKEND_URL}/mercadolibre/auth-url`);
+    const data = await resp.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      mostrarError('No se pudo obtener la URL de Mercado Libre');
+    }
+  } catch (e) {
+    mostrarError('Error de red obteniendo URL de Mercado Libre');
+  }
+}
+
+function mostrarBotonConectarML() {
+  resultadoDiv.innerHTML = `
+    <div class="error">
+      <i class="fas fa-exclamation-circle"></i> Es necesario conectar con Mercado Libre para continuar.<br>
+      <button onclick="conectarMercadoLibre()" class="btn-calculate" style="margin-top:10px;">
+        <i class="fab fa-mercadolibre"></i> Conectar con Mercado Libre
+      </button>
+    </div>
+  `;
+}
+
 // ================= ELEMENTOS DEL FORMULARIO =================
 const formulario = document.getElementById('formulario');
 const selectorCosto = document.getElementById('modoCosto');
@@ -76,6 +129,11 @@ async function manejarSubmit(event) {
         // Verificar si la respuesta es exitosa
         if (!response.ok) {
             const errorData = await response.json();
+            // Si el error es de autenticación de Mercado Libre, mostrar botón
+            if ((errorData.error || '').includes('Mercado Libre')) {
+                mostrarBotonConectarML();
+                return;
+            }
             throw new Error(errorData.error || 'Error en el servidor');
         }
         
