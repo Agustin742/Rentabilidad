@@ -178,7 +178,8 @@ async function manejarSubmit(event) {
         if (!response.ok) {
             const errorData = await response.json();
             // Si el error es de autenticación de Mercado Libre, mostrar botón
-            if ((errorData.error || '').includes('Mercado Libre')) {
+            const errMsg = (errorData.error || '').toLowerCase();
+            if (errMsg.includes('mercado libre') || errMsg.includes('access_token') || errMsg.includes('autenticar')) {
                 mostrarBotonConectarML();
                 return;
             }
