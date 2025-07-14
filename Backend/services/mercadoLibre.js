@@ -6,71 +6,104 @@ const API_BASE_URL = 'https://api.mercadolibre.com';
 const mercadoLibreTokens = require('../mlTokenStore');
 const MLToken = require('../models/MLToken');
 async function getMercadoLibreTokens() {
-  // Cargar desde memoria o DB
-  let dbToken = null;
-  if (mercadoLibreTokens.access_token) {
-    dbToken = mercadoLibreTokens;
-  } else {
-    dbToken = await MLToken.findOne({});
-    if (dbToken && dbToken.access_token) {
-      mercadoLibreTokens.access_token = dbToken.access_token;
-      mercadoLibreTokens.refresh_token = dbToken.refresh_token;
-      mercadoLibreTokens.expires_in = dbToken.expires_in;
-      mercadoLibreTokens.obtained_at = dbToken.obtained_at;
-      mercadoLibreTokens.user_id = dbToken.user_id;
-      mercadoLibreTokens.scope = dbToken.scope;
+  try {
+    console.log('[ML] Entrando a getMercadoLibreTokens');
+    // Cargar desde memoria o DB
+    let dbToken = null;
+    if (mercadoLibreTokens.access_token) {
+      dbToken = mercadoLibreTokens;
+      console.log('[ML] Token en memoria:', {
+        access_token: dbToken.access_token,
+        expires_in: dbToken.expires_in,
+        obtained_at: dbToken.obtained_at
+      });
+    } else {
+      dbToken = await MLToken.findOne({});
+      if (dbToken && dbToken.access_token) {
+        mercadoLibreTokens.access_token = dbToken.access_token;
+        mercadoLibreTokens.refresh_token = dbToken.refresh_token;
+        mercadoLibreTokens.expires_in = dbToken.expires_in;
+        mercadoLibreTokens.obtained_at = dbToken.obtained_at;
+        mercadoLibreTokens.user_id = dbToken.user_id;
+        mercadoLibreTokens.scope = dbToken.scope;
+        console.log('[ML] Token cargado de MongoDB:', {
+          access_token: dbToken.access_token,
+          expires_in: dbToken.expires_in,
+          obtained_at: dbToken.obtained_at
+        });
+      } else {
+        console.log('[ML] No se encontró token en memoria ni en MongoDB');
+      }
     }
-  }
 
-  // Si no hay token, retorna nulo
-  if (!dbToken || !dbToken.access_token) return { access_token: null };
-
-  // Verifica expiración
-  const expires_in = dbToken.expires_in || 0;
-  const obtained_at = dbToken.obtained_at || 0;
-  const expiresAt = obtained_at + (expires_in * 1000) - (60 * 1000); // 1 min de margen
-  if (Date.now() >= expiresAt) {
-    // Token expiró, intenta refresh
-    try {
-      const params = new URLSearchParams({
-        grant_type: 'refresh_token',
-        client_id: process.env.ML_APP_ID,
-        client_secret: process.env.ML_SECRET_KEY,
-        refresh_token: dbToken.refresh_token,
-        redirect_uri: process.env.ML_REDIRECT_URI
-      });
-      const response = await axios.post('https://api.mercadolibre.com/oauth/token', params.toString(), {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-      });
-      // Actualiza memoria y DB
-      mercadoLibreTokens.access_token = response.data.access_token;
-      mercadoLibreTokens.refresh_token = response.data.refresh_token;
-      mercadoLibreTokens.expires_in = response.data.expires_in;
-      mercadoLibreTokens.obtained_at = Date.now();
-      mercadoLibreTokens.user_id = response.data.user_id;
-      mercadoLibreTokens.scope = response.data.scope;
-      await MLToken.findOneAndUpdate(
-        {},
-        {
-          access_token: response.data.access_token,
-          refresh_token: response.data.refresh_token,
-          expires_in: response.data.expires_in,
-          obtained_at: Date.now(),
-          user_id: response.data.user_id,
-          scope: response.data.scope
-        },
-        { upsert: true, new: true }
-      );
-      return mercadoLibreTokens;
-    } catch (error) {
-      console.error('Error refrescando access_token ML:', error.response?.data || error.message);
+    // Si no hay token, retorna nulo
+    if (!dbToken || !dbToken.access_token) {
+      console.log('[ML] No hay access_token disponible');
       return { access_token: null };
     }
-  }
 
-  // Si no expiró, retorna el token actual
-  return mercadoLibreTokens;
+    // Verifica expiración
+    const expires_in = dbToken.expires_in || 0;
+    const obtained_at = dbToken.obtained_at || 0;
+    const expiresAt = obtained_at + (expires_in * 1000) - (60 * 1000); // 1 min de margen
+    if (Date.now() >= expiresAt) {
+      // Token expiró, intenta refresh
+      console.log('[ML] Token expirado, intentando refresh...');
+      try {
+        const params = new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: process.env.ML_APP_ID,
+          client_secret: process.env.ML_SECRET_KEY,
+          refresh_token: dbToken.refresh_token,
+          redirect_uri: process.env.ML_REDIRECT_URI
+        });
+        const response = await axios.post('https://api.mercadolibre.com/oauth/token', params.toString(), {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        // Actualiza memoria y DB
+        mercadoLibreTokens.access_token = response.data.access_token;
+        mercadoLibreTokens.refresh_token = response.data.refresh_token;
+        mercadoLibreTokens.expires_in = response.data.expires_in;
+        mercadoLibreTokens.obtained_at = Date.now();
+        mercadoLibreTokens.user_id = response.data.user_id;
+        mercadoLibreTokens.scope = response.data.scope;
+        await MLToken.findOneAndUpdate(
+          {},
+          {
+            access_token: response.data.access_token,
+            refresh_token: response.data.refresh_token,
+            expires_in: response.data.expires_in,
+            obtained_at: Date.now(),
+            user_id: response.data.user_id,
+            scope: response.data.scope
+          },
+          { upsert: true, new: true }
+        );
+        console.log('[ML] Token refrescado exitosamente:', {
+          access_token: response.data.access_token,
+          expires_in: response.data.expires_in,
+          obtained_at: Date.now()
+        });
+        return mercadoLibreTokens;
+      } catch (error) {
+        console.error('[ML] Error refrescando access_token ML:', error.response?.data || error.message);
+        return { access_token: null };
+      }
+    }
+
+    // Si no expiró, retorna el token actual
+    console.log('[ML] Token válido, retornando:', {
+      access_token: mercadoLibreTokens.access_token,
+      expires_in: mercadoLibreTokens.expires_in,
+      obtained_at: mercadoLibreTokens.obtained_at
+    });
+    return mercadoLibreTokens;
+  } catch (err) {
+    console.error('[ML] Error inesperado en getMercadoLibreTokens:', err);
+    return { access_token: null };
+  }
 }
+
 
 
 async function getAccessToken() {
